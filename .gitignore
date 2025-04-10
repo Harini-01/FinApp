@@ -1,0 +1,18 @@
+# Node modules
+/node_modules/
+
+# Environment files
+/.env
+
+# Firebase service account key (if it's a file)
+/utils/your-service-account.json
+
+# Logs
+*.log
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# VSCode workspace settings
+.vscode/
