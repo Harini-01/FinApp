@@ -1,18 +1,23 @@
+# Firebase config files
+firebase-debug.log
+firebase*.json
+
 # Node modules
-/node_modules/
+node_modules/
 
-# Environment files
-/.env
+# Firebase functions
+functions/node_modules/
 
-# Firebase service account key (if it's a file)
-/utils/your-service-account.json
+# Local environment configuration files
+.env
 
-# Logs
-*.log
+# Local Firebase emulators
+.firestore/
 
 # OS-specific files
 .DS_Store
 Thumbs.db
 
-# VSCode workspace settings
-.vscode/
+# Logs
+logs/
+*.log
