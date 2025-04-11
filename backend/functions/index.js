@@ -6,7 +6,7 @@ admin.initializeApp();
 // Manually connect to the Firestore Emulator
 if (process.env.NODE_ENV === "development") {
   admin.firestore().settings({
-    host: "localhost:8080", // Firestore Emulator
+    host: "localhost:8081", // Firestore Emulator
     ssl: false, // Disable SSL since emulators don't use it
   });
 }
