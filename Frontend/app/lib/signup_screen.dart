@@ -24,7 +24,8 @@ class SignUpScreen extends StatelessWidget {
               children: [
                 // Back button
                 IconButton(
-                  icon: const Icon(Icons.arrow_back),
+                  icon: const Icon(Icons.arrow_back,
+                      color: Colors.black, size: 35),
                   onPressed: () => Navigator.pop(context),
                 ),
 
@@ -44,10 +45,11 @@ class SignUpScreen extends StatelessWidget {
 
                 // Input fields
                 TextField(
+                  style: TextStyle(color: Colors.black),
                   decoration: InputDecoration(
                     hintText: 'Fullname',
                     filled: true,
-                    fillColor: const Color.fromARGB(255, 3, 3, 3),
+                    fillColor: const Color.fromARGB(255, 253, 253, 253),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(30),
                       borderSide: BorderSide.none,
@@ -58,10 +60,11 @@ class SignUpScreen extends StatelessWidget {
                 const SizedBox(height: 10),
 
                 TextField(
+                  style: TextStyle(color: Colors.black),
                   decoration: InputDecoration(
                     hintText: 'Email',
                     filled: true,
-                    fillColor: const Color.fromARGB(255, 0, 0, 0),
+                    fillColor: const Color.fromARGB(255, 255, 255, 255),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(30),
                       borderSide: BorderSide.none,
@@ -73,10 +76,11 @@ class SignUpScreen extends StatelessWidget {
 
                 TextField(
                   obscureText: true,
+                  style: TextStyle(color: Colors.black),
                   decoration: InputDecoration(
                     hintText: 'Password',
                     filled: true,
-                    fillColor: const Color.fromARGB(255, 7, 7, 7),
+                    fillColor: const Color.fromARGB(255, 255, 255, 255),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(30),
                       borderSide: BorderSide.none,
@@ -97,6 +101,30 @@ class SignUpScreen extends StatelessWidget {
                       ),
                     ),
                     onPressed: () {
+                      showDialog(
+                        context: context,
+                        builder: (BuildContext context) {
+                          return AlertDialog(
+                            title: const Text("Success"),
+                            content: const Text("Created account successfully"),
+                            actions: [
+                              TextButton(
+                                onPressed: () {
+                                  Navigator.of(context)
+                                      .pop(); // close the dialog
+                                  Navigator.pushReplacement(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => const LoginScreen(),
+                                    ),
+                                  );
+                                },
+                                child: const Text("OK"),
+                              ),
+                            ],
+                          );
+                        },
+                      );
                       // Add sign up functionality here
                     },
                     child: const Text(
@@ -147,7 +175,10 @@ class SignUpScreen extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Text("Already have an account?"),
+                    const Text(
+                      "Already have an account?",
+                      style: TextStyle(color: Colors.black, fontSize: 16),
+                    ),
                     TextButton(
                       onPressed: () {
                         Navigator.push(
@@ -158,7 +189,8 @@ class SignUpScreen extends StatelessWidget {
                       },
                       child: Text(
                         'Log in',
-                        style: TextStyle(color: Colors.purple.shade300),
+                        style: TextStyle(
+                            color: Colors.purple.shade300, fontSize: 22),
                       ),
                     ),
                   ],
