@@ -25,7 +25,11 @@ class LoginScreen extends StatelessWidget {
               children: [
                 // Back button
                 IconButton(
-                  icon: const Icon(Icons.arrow_back),
+                  icon: const Icon(
+                    Icons.arrow_back,
+                    color: Colors.black,
+                    size: 35,
+                  ),
                   onPressed: () => Navigator.pop(context),
                 ),
 
@@ -36,6 +40,7 @@ class LoginScreen extends StatelessWidget {
                   'Welcome\nBack',
                   style: TextStyle(
                     fontSize: 32,
+                    color: Colors.black,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -44,6 +49,7 @@ class LoginScreen extends StatelessWidget {
 
                 // Input fields
                 TextField(
+                  style: TextStyle(color: Colors.black),
                   decoration: InputDecoration(
                     hintText: 'Email',
                     filled: true,
@@ -59,6 +65,7 @@ class LoginScreen extends StatelessWidget {
 
                 TextField(
                   obscureText: true,
+                  style: TextStyle(color: Colors.black),
                   decoration: InputDecoration(
                     hintText: 'Password',
                     filled: true,
@@ -93,7 +100,7 @@ class LoginScreen extends StatelessWidget {
                     },
                     child: const Text(
                       'Log In',
-                      style: TextStyle(fontSize: 18, color: Colors.white),
+                      style: TextStyle(fontSize: 20, color: Colors.white),
                     ),
                   ),
                 ),
@@ -108,7 +115,8 @@ class LoginScreen extends StatelessWidget {
                     },
                     child: Text(
                       'Forgot Password?',
-                      style: TextStyle(color: Colors.purple.shade300),
+                      style: TextStyle(
+                          fontSize: 20, color: Colors.purple.shade300),
                     ),
                   ),
                 ),
@@ -119,7 +127,10 @@ class LoginScreen extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Text("Don't have an account?"),
+                    const Text(
+                      "Don't have an account?",
+                      style: TextStyle(color: Colors.black, fontSize: 16),
+                    ),
                     TextButton(
                       onPressed: () {
                         Navigator.push(
@@ -130,7 +141,8 @@ class LoginScreen extends StatelessWidget {
                       },
                       child: Text(
                         'Sign Up',
-                        style: TextStyle(color: Colors.purple.shade300),
+                        style: TextStyle(
+                            fontSize: 20, color: Colors.purple.shade300),
                       ),
                     ),
                   ],
