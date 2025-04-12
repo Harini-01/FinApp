@@ -2,9 +2,19 @@ import 'package:flutter/material.dart';
 import 'profile.dart';
 import 'chatbot.dart';
 
-class HomePage extends StatelessWidget {
-  const HomePage({Key? key}) : super(key: key);
+class HomePage extends StatefulWidget {
+  final String userId;
 
+  const HomePage({
+    Key? key,
+    required this.userId,
+  }) : super(key: key);
+
+  @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -99,7 +109,8 @@ class HomePage extends StatelessWidget {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                                builder: (context) => const ProfilePage()),
+                                builder: (context) =>
+                                    ProfilePage(userId: widget.userId)),
                           );
                         },
                         child: Container(
@@ -374,20 +385,30 @@ class HomePage extends StatelessWidget {
         type: BottomNavigationBarType.fixed,
         selectedItemColor: Colors.green,
         unselectedItemColor: const Color.fromARGB(255, 188, 188, 188),
-        items: const [
+        items: [
           BottomNavigationBarItem(
-            icon: Icon(Icons.person),
+            icon: IconButton(
+              icon: const Icon(Icons.person),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ProfilePage(userId: widget.userId),
+                  ),
+                );
+              },
+            ),
             label: 'Profile',
           ),
-          BottomNavigationBarItem(
+          const BottomNavigationBarItem(
             icon: Icon(Icons.swap_horiz),
             label: 'Transfer',
           ),
-          BottomNavigationBarItem(
+          const BottomNavigationBarItem(
             icon: Icon(Icons.block),
             label: 'Block',
           ),
-          BottomNavigationBarItem(
+          const BottomNavigationBarItem(
             icon: Icon(Icons.settings),
             label: 'Settings',
           ),

@@ -1,15 +1,86 @@
 import 'package:flutter/material.dart';
 import 'login_screen.dart';
+import 'services/auth_service.dart';
 
-class SignUpScreen extends StatelessWidget {
+class SignUpScreen extends StatefulWidget {
   const SignUpScreen({Key? key}) : super(key: key);
+
+  @override
+  State<SignUpScreen> createState() => _SignUpScreenState();
+}
+
+class _SignUpScreenState extends State<SignUpScreen> {
+  final _nameController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  bool _isLoading = false;
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _handleSignUp() async {
+    if (_nameController.text.isEmpty ||
+        _emailController.text.isEmpty ||
+        _passwordController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please fill all fields')),
+      );
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    try {
+      final response = await AuthService.signUp(
+        name: _nameController.text,
+        email: _emailController.text,
+        password: _passwordController.text,
+      );
+
+      if (!mounted) return;
+
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: const Text("Success"),
+            content: const Text("Account created successfully"),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop(); // close dialog
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const LoginScreen(),
+                    ),
+                  );
+                },
+                child: const Text("OK"),
+              ),
+            ],
+          );
+        },
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString())),
+      );
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // Don't set background color here since we'll use an image
       body: Container(
-        // Background image decoration
         decoration: const BoxDecoration(
           image: DecorationImage(
             image: AssetImage('assets/images/image.png'),
@@ -22,16 +93,12 @@ class SignUpScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Back button
                 IconButton(
                   icon: const Icon(Icons.arrow_back,
                       color: Colors.black, size: 35),
                   onPressed: () => Navigator.pop(context),
                 ),
-
                 const SizedBox(height: 20),
-
-                // Create new account text
                 const Text(
                   'Create New\nAccount',
                   style: TextStyle(
@@ -40,12 +107,10 @@ class SignUpScreen extends StatelessWidget {
                     color: Colors.black,
                   ),
                 ),
-
                 const SizedBox(height: 40),
-
-                // Input fields
                 TextField(
-                  style: TextStyle(color: Colors.black),
+                  controller: _nameController,
+                  style: const TextStyle(color: Colors.black),
                   decoration: InputDecoration(
                     hintText: 'Fullname',
                     filled: true,
@@ -56,11 +121,10 @@ class SignUpScreen extends StatelessWidget {
                     ),
                   ),
                 ),
-
                 const SizedBox(height: 10),
-
                 TextField(
-                  style: TextStyle(color: Colors.black),
+                  controller: _emailController,
+                  style: const TextStyle(color: Colors.black),
                   decoration: InputDecoration(
                     hintText: 'Email',
                     filled: true,
@@ -71,12 +135,11 @@ class SignUpScreen extends StatelessWidget {
                     ),
                   ),
                 ),
-
                 const SizedBox(height: 10),
-
                 TextField(
+                  controller: _passwordController,
                   obscureText: true,
-                  style: TextStyle(color: Colors.black),
+                  style: const TextStyle(color: Colors.black),
                   decoration: InputDecoration(
                     hintText: 'Password',
                     filled: true,
@@ -87,10 +150,7 @@ class SignUpScreen extends StatelessWidget {
                     ),
                   ),
                 ),
-
                 const SizedBox(height: 30),
-
-                // Sign up button
                 Center(
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
@@ -100,43 +160,23 @@ class SignUpScreen extends StatelessWidget {
                         borderRadius: BorderRadius.circular(30),
                       ),
                     ),
-                    onPressed: () {
-                      showDialog(
-                        context: context,
-                        builder: (BuildContext context) {
-                          return AlertDialog(
-                            title: const Text("Success"),
-                            content: const Text("Created account successfully"),
-                            actions: [
-                              TextButton(
-                                onPressed: () {
-                                  Navigator.of(context)
-                                      .pop(); // close the dialog
-                                  Navigator.pushReplacement(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => const LoginScreen(),
-                                    ),
-                                  );
-                                },
-                                child: const Text("OK"),
-                              ),
-                            ],
-                          );
-                        },
-                      );
-                      // Add sign up functionality here
-                    },
-                    child: const Text(
-                      'Sign Up',
-                      style: TextStyle(fontSize: 18, color: Colors.white),
-                    ),
+                    onPressed: _isLoading ? null : _handleSignUp,
+                    child: _isLoading
+                        ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2,
+                            ),
+                          )
+                        : const Text(
+                            'Sign Up',
+                            style: TextStyle(fontSize: 18, color: Colors.white),
+                          ),
                   ),
                 ),
-
                 const SizedBox(height: 10),
-
-                // Or divider
                 Row(
                   children: const [
                     Expanded(child: Divider()),
@@ -147,10 +187,7 @@ class SignUpScreen extends StatelessWidget {
                     Expanded(child: Divider()),
                   ],
                 ),
-
                 const SizedBox(height: 15),
-
-                // Social login buttons
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -168,10 +205,7 @@ class SignUpScreen extends StatelessWidget {
                     ),
                   ],
                 ),
-
                 const Spacer(),
-
-                // Already have an account
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [

@@ -1,9 +1,61 @@
 import 'package:flutter/material.dart';
 import 'signup_screen.dart';
 import 'homepage.dart';
+import 'services/auth_service.dart'; // Add this import
+import 'package:shared_preferences/shared_preferences.dart'; // Add this import
 
-class LoginScreen extends StatelessWidget {
+class LoginScreen extends StatefulWidget {
   const LoginScreen({Key? key}) : super(key: key);
+
+  @override
+  State<LoginScreen> createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends State<LoginScreen> {
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  bool _isLoading = false;
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _handleLogin() async {
+    if (_emailController.text.isEmpty || _passwordController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please fill all fields')),
+      );
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    try {
+      final response = await AuthService.login(
+        email: _emailController.text,
+        password: _passwordController.text,
+      );
+
+      if (!mounted) return;
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => HomePage(userId: response['userId']),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString())),
+      );
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -49,6 +101,7 @@ class LoginScreen extends StatelessWidget {
 
                 // Input fields
                 TextField(
+                  controller: _emailController, // Add this
                   style: TextStyle(color: Colors.black),
                   decoration: InputDecoration(
                     hintText: 'Email',
@@ -64,6 +117,7 @@ class LoginScreen extends StatelessWidget {
                 const SizedBox(height: 15),
 
                 TextField(
+                  controller: _passwordController, // Add this
                   obscureText: true,
                   style: TextStyle(color: Colors.black),
                   decoration: InputDecoration(
@@ -89,19 +143,20 @@ class LoginScreen extends StatelessWidget {
                         borderRadius: BorderRadius.circular(30),
                       ),
                     ),
-                    onPressed: () {
-                      // Add login functionality here
-                      // Navigate to HomePage after successful login
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => const HomePage()),
-                      );
-                    },
-                    child: const Text(
-                      'Log In',
-                      style: TextStyle(fontSize: 20, color: Colors.white),
-                    ),
+                    onPressed: _isLoading ? null : _handleLogin, // Update this
+                    child: _isLoading
+                        ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2,
+                            ),
+                          )
+                        : const Text(
+                            'Log In',
+                            style: TextStyle(fontSize: 20, color: Colors.white),
+                          ),
                   ),
                 ),
 

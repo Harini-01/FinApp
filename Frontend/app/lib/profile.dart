@@ -1,7 +1,14 @@
 import 'package:flutter/material.dart';
+import 'services/auth_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class ProfilePage extends StatefulWidget {
-  const ProfilePage({Key? key}) : super(key: key);
+  final String userId;
+
+  const ProfilePage({
+    Key? key,
+    required this.userId,
+  }) : super(key: key);
 
   @override
   State<ProfilePage> createState() => _ProfilePageState();
@@ -9,16 +16,26 @@ class ProfilePage extends StatefulWidget {
 
 class _ProfilePageState extends State<ProfilePage> {
   // Controllers for the text fields
-  final TextEditingController _usernameController = TextEditingController();
+  final TextEditingController _nameController =
+      TextEditingController(); // Changed from _usernameController
   final TextEditingController _ageController = TextEditingController();
   final TextEditingController _incomeController = TextEditingController();
   final TextEditingController _expenseController = TextEditingController();
   final TextEditingController _goalController = TextEditingController();
 
+  // Add these variables
+  Map<String, bool> _editingStates = {
+    'username': false,
+    'age': false,
+    'income': false,
+    'expense': false,
+    'goal': false,
+  };
+
   @override
   void dispose() {
     // Dispose controllers when the widget is removed
-    _usernameController.dispose();
+    _nameController.dispose(); // Changed from _usernameController
     _ageController.dispose();
     _incomeController.dispose();
     _expenseController.dispose();
@@ -114,18 +131,22 @@ class _ProfilePageState extends State<ProfilePage> {
                         const SizedBox(height: 24),
 
                         // Form fields
-                        _buildInputField('UserName', _usernameController),
+                        _buildEditableField('Name', _nameController,
+                            'username'), // Changed from 'Username'
                         const SizedBox(height: 12),
-                        _buildInputField('Age', _ageController,
+                        _buildEditableField('Age', _ageController, 'age',
                             keyboardType: TextInputType.number),
                         const SizedBox(height: 12),
-                        _buildInputField('Monthly Income', _incomeController,
+                        _buildEditableField(
+                            'Monthly Income', _incomeController, 'income',
                             keyboardType: TextInputType.number),
                         const SizedBox(height: 12),
-                        _buildInputField('Fixed Expense', _expenseController,
+                        _buildEditableField(
+                            'Fixed Expense', _expenseController, 'expense',
                             keyboardType: TextInputType.number),
                         const SizedBox(height: 12),
-                        _buildInputField('Financial Goal', _goalController),
+                        _buildEditableField(
+                            'Financial Goal', _goalController, 'goal'),
 
                         const Spacer(),
 
@@ -227,5 +248,84 @@ class _ProfilePageState extends State<ProfilePage> {
         size: 30,
       ),
     );
+  }
+
+  // Helper method to build editable input field
+  Widget _buildEditableField(
+      String label, TextEditingController controller, String fieldKey,
+      {TextInputType keyboardType = TextInputType.text}) {
+    return Container(
+      height: 50,
+      decoration: BoxDecoration(
+        color: Color(0xFFFCE4EC),
+        borderRadius: BorderRadius.circular(25),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Row(
+        children: [
+          Expanded(
+            child: _editingStates[fieldKey] == true
+                ? TextField(
+                    controller: controller,
+                    keyboardType: keyboardType,
+                    decoration: InputDecoration(
+                      hintText: label,
+                      border: InputBorder.none,
+                      hintStyle: TextStyle(color: Colors.black87),
+                    ),
+                  )
+                : Text(
+                    controller.text.isEmpty ? label : controller.text,
+                    style: TextStyle(
+                      color: controller.text.isEmpty
+                          ? Colors.black87
+                          : Colors.black,
+                    ),
+                  ),
+          ),
+          IconButton(
+            icon: Icon(
+              _editingStates[fieldKey] == true ? Icons.check : Icons.edit,
+              color: Colors.purple,
+            ),
+            onPressed: () async {
+              if (_editingStates[fieldKey] == true) {
+                // Save the changes
+                await _updateField(fieldKey);
+              }
+              setState(() {
+                _editingStates[fieldKey] = !_editingStates[fieldKey]!;
+              });
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _updateField(String fieldKey) async {
+    try {
+      final response = await AuthService.updateProfile(
+        userId: widget.userId, // Use the userId passed to widget
+        data: {
+          'name': _nameController.text,
+          'age': int.tryParse(_ageController.text),
+          'monthlyIncome': double.tryParse(_incomeController.text),
+          'fixedExpense': double.tryParse(_expenseController.text),
+          'financialGoal': _goalController.text,
+        },
+      );
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Profile updated successfully!')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error updating profile: $e')),
+      );
+    }
   }
 }
