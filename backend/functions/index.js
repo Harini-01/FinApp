@@ -31,10 +31,11 @@ exports.addUser = functions.https.onRequest(async (req, res) => {
     // Hash password before storing
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    // Create user document with initial structure
     await userRef.set({ 
       name, 
       email,
-      password: hashedPassword,  // Store hashed password
+      password: hashedPassword,
       settings: {
         trackingMethod,
         notificationsEnabled: true
@@ -42,7 +43,13 @@ exports.addUser = functions.https.onRequest(async (req, res) => {
       createdAt: FieldValue.serverTimestamp()
     });
 
-    console.log(`User created successfully with ID: ${userRef.id}`);
+    // Initialize empty goals collection
+    const goalsRef = userRef.collection('goals');
+    await goalsRef.doc('.info').set({
+      createdAt: FieldValue.serverTimestamp()
+    });
+
+    console.log(`User and goals collection created successfully with ID: ${userRef.id}`);
     
     res.status(200).send({ 
       message: "User added successfully!",
@@ -57,48 +64,58 @@ exports.addUser = functions.https.onRequest(async (req, res) => {
   }
 });
 
-// Add expense as subcollection to user
+// Update the addExpense function to include icon and category data
 exports.addExpense = functions.https.onRequest(async (req, res) => {
-  const { userId, amount, category, description, date } = req.body;
-  
+  const { userId, category, amount, iconData, color } = req.body;
+
+  if (!userId || !category || amount === undefined) {
+    return res.status(400).send({ 
+      error: "Missing required fields",
+      required: ["userId", "category", "amount"]
+    });
+  }
+
   try {
     const userRef = admin.firestore().collection('users').doc(userId);
     const expenseRef = userRef.collection('expenses').doc();
 
+    const now = admin.firestore.Timestamp.now();
+
     await expenseRef.set({
-      amount,
+      amount: Number(amount),
       category,
-      description,
-      date,
-      createdAt: FieldValue.serverTimestamp()
+      iconData: Number(iconData) || 0,
+      color: Number(color) || 0,
+      date: now,
+      createdAt: now
     });
 
-    // Update monthly spending totals in user document
-    const month = new Date(date).toISOString().slice(0, 7); // Format: YYYY-MM
+    // Add monthly stats update
+    const month = now.toDate().toISOString().slice(0, 7); // YYYY-MM
     const monthlyStatsRef = userRef.collection('monthlyStats').doc(month);
-    
-    await admin.firestore().runTransaction(async (transaction) => {
-      const monthlyDoc = await transaction.get(monthlyStatsRef);
-      
-      if (!monthlyDoc.exists) {
-        transaction.set(monthlyStatsRef, {
-          totalSpent: amount,
-          categories: {
-            [category]: amount
-          }
-        });
-      } else {
-        const currentData = monthlyDoc.data();
-        transaction.update(monthlyStatsRef, {
-          totalSpent: currentData.totalSpent + amount,
-          [`categories.${category}`]: (currentData.categories[category] || 0) + amount
-        });
-      }
+
+    await monthlyStatsRef.set({
+      totalExpenses: admin.firestore.FieldValue.increment(Number(amount)),
+      lastUpdated: now
+    }, { merge: true });
+
+    console.log('Expense added successfully:', {
+      expenseId: expenseRef.id,
+      amount,
+      category
     });
 
-    res.status(200).send({ message: "Expense added successfully!" });
+    res.status(200).send({ 
+      success: true,
+      expenseId: expenseRef.id
+    });
+
   } catch (error) {
-    res.status(500).send({ error: "Error adding expense" });
+    console.error('Error adding expense:', error);
+    res.status(500).send({ 
+      error: "Failed to add expense",
+      details: error.message
+    });
   }
 });
 
@@ -208,9 +225,8 @@ exports.login = functions.https.onRequest(async (req, res) => {
 
 // Add update profile function
 exports.updateProfile = functions.https.onRequest(async (req, res) => {
-  const { userId, name, age, monthlyIncome, fixedExpense, financialGoal } = req.body;
+  const { userId, ...updateData } = req.body;
 
-  // Add debug logs
   console.log('Updating profile for userId:', userId);
   console.log('Request body:', req.body);
 
@@ -224,9 +240,6 @@ exports.updateProfile = functions.https.onRequest(async (req, res) => {
     const userRef = admin.firestore().collection('users').doc(userId);
     const userDoc = await userRef.get();
 
-    // Add debug log
-    console.log('User document exists:', userDoc.exists);
-
     if (!userDoc.exists) {
       return res.status(404).send({ 
         error: "User not found",
@@ -234,41 +247,231 @@ exports.updateProfile = functions.https.onRequest(async (req, res) => {
       });
     }
 
-    // Update with name instead of username
+    // Get existing profile data
+    const existingProfile = userDoc.data().profile || {};
+
+    // Merge new data with existing profile data
+    const updatedProfile = {
+      ...existingProfile,
+      ...updateData,
+      lastUpdated: FieldValue.serverTimestamp()
+    };
+
+    // Update only the profile field
     await userRef.update({
-      profile: {
-        name: name || null,
-        age: age || null,
-        monthlyIncome: monthlyIncome || 0,
-        fixedExpense: fixedExpense || 0,
-        financialGoal: financialGoal || null,
-        lastUpdated: FieldValue.serverTimestamp()
-      }
+      profile: updatedProfile
     });
 
-    // Add debug log
     console.log('Profile updated successfully');
 
     res.status(200).send({
       message: "Profile updated successfully",
-      profile: {
-        name,
-        age,
-        monthlyIncome,
-        fixedExpense,
-        financialGoal
-      }
+      profile: updatedProfile
     });
   } catch (error) {
     console.error('Error updating profile:', error);
-    console.error('Error details:', {
-      code: error.code,
-      message: error.message,
-      stack: error.stack
-    });
-    
     res.status(500).send({
       error: "Failed to update profile",
+      details: error.message
+    });
+  }
+});
+
+// Add new function to get user data
+exports.getUserData = functions.https.onRequest(async (req, res) => {
+  const { userId } = req.body;
+
+  if (!userId) {
+    return res.status(400).send({ error: "Missing user ID" });
+  }
+
+  try {
+    const userRef = admin.firestore().collection('users').doc(userId);
+    const userDoc = await userRef.get();
+
+    if (!userDoc.exists) {
+      return res.status(404).send({ error: "User not found" });
+    }
+
+    // Get the entire user document
+    const userData = userDoc.data();
+
+    res.status(200).send(userData);
+  } catch (error) {
+    console.error('Error fetching user data:', error);
+    res.status(500).send({
+      error: "Failed to fetch user data",
+      details: error.message
+    });
+  }
+});
+
+exports.getGoals = functions.https.onRequest(async (req, res) => {
+  const { userId } = req.body;
+
+  if (!userId) {
+    return res.status(400).send({ 
+      error: "Missing user ID" 
+    });
+  }
+
+  try {
+    const userRef = admin.firestore().collection('users').doc(userId);
+    const userDoc = await userRef.get();
+
+    if (!userDoc.exists) {
+      return res.status(404).send({ error: "User not found" });
+    }
+
+    // Get goals subcollection
+    const goalsRef = userRef.collection('goals');
+    const goalsSnapshot = await goalsRef.get();
+
+    const goals = [];
+    goalsSnapshot.forEach(doc => {
+      goals.push({
+        id: doc.id,
+        ...doc.data()
+      });
+    });
+
+    // Add debug log
+    console.log(`Retrieved ${goals.length} goals for user ${userId}`);
+
+    res.status(200).send(goals);
+
+  } catch (error) {
+    console.error('Error fetching goals:', error);
+    res.status(500).send({
+      error: "Failed to fetch goals",
+      details: error.message
+    });
+  }
+});
+
+exports.getProfile = functions.https.onRequest(async (req, res) => {
+  const { userId } = req.body;
+
+  if (!userId) {
+    return res.status(400).send({ error: "Missing user ID" });
+  }
+
+  try {
+    const userRef = admin.firestore().collection('users').doc(userId);
+    const userDoc = await userRef.get();
+
+    if (!userDoc.exists) {
+      return res.status(404).send({ error: "User not found" });
+    }
+
+    const userData = userDoc.data();
+    res.status(200).send({
+      profile: userData.profile || {},
+      settings: userData.settings || {}
+    });
+
+  } catch (error) {
+    console.error('Error fetching profile:', error);
+    res.status(500).send({
+      error: "Failed to fetch profile",
+      details: error.message
+    });
+  }
+});
+
+exports.updateGoalAmount = functions.https.onRequest(async (req, res) => {
+  const { userId, goalId, amount } = req.body;
+
+  if (!userId || !goalId || amount === undefined) {
+    return res.status(400).send({ 
+      error: "Missing required fields" 
+    });
+  }
+
+  try {
+    const goalRef = admin.firestore()
+      .collection('users')
+      .doc(userId)
+      .collection('goals')
+      .doc(goalId);
+
+    const goalDoc = await goalRef.get();
+    if (!goalDoc.exists) {
+      return res.status(404).send({ error: "Goal not found" });
+    }
+
+    const currentData = goalDoc.data();
+    const newAmount = currentData.currentAmount + amount;
+    const progress = (newAmount / currentData.targetAmount) * 100;
+
+    await goalRef.update({
+      currentAmount: newAmount,
+      progress: progress,
+      lastUpdated: FieldValue.serverTimestamp()
+    });
+
+    res.status(200).send({
+      message: "Goal updated successfully",
+      currentAmount: newAmount,
+      progress: progress
+    });
+
+  } catch (error) {
+    console.error('Error updating goal:', error);
+    res.status(500).send({
+      error: "Failed to update goal",
+      details: error.message
+    });
+  }
+});
+
+exports.getExpenses = functions.https.onRequest(async (req, res) => {
+  const { userId } = req.body;
+
+  if (!userId) {
+    return res.status(400).send({ 
+      error: "Missing user ID" 
+    });
+  }
+
+  try {
+    const userRef = admin.firestore().collection('users').doc(userId);
+    const userDoc = await userRef.get();
+
+    if (!userDoc.exists) {
+      return res.status(404).send({ error: "User not found" });
+    }
+
+    // Get expenses subcollection
+    const expensesRef = userRef.collection('expenses');
+    const expensesSnapshot = await expensesRef.orderBy('date', 'desc').get();
+
+    const expenses = [];
+    expensesSnapshot.forEach(doc => {
+      expenses.push({
+        id: doc.id,
+        ...doc.data(),
+        // Convert Firestore Timestamp to ISO string for date
+        date: doc.data().date.toDate().toISOString(),
+      });
+    });
+
+    // Calculate total expenses
+    const totalExpenses = expenses.reduce((sum, expense) => sum + expense.amount, 0);
+
+    console.log(`Retrieved ${expenses.length} expenses for user ${userId}`);
+    console.log('Total expenses:', totalExpenses);
+
+    res.status(200).send({
+      expenses,
+      totalExpenses,
+      count: expenses.length
+    });
+
+  } catch (error) {
+    console.error('Error fetching expenses:', error);
+    res.status(500).send({
+      error: "Failed to fetch expenses",
       details: error.message
     });
   }

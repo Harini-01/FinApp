@@ -13,7 +13,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Finance App',
+      title: 'Finora',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         primarySwatch: Colors.purple,
@@ -46,7 +46,7 @@ class _SplashScreenState extends State<SplashScreen>
     // Navigate to next screen after 3 seconds
     Future.delayed(const Duration(seconds: 3), () {
       Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (context) => const NextScreen()),
+        MaterialPageRoute(builder: (context) => const WelcomeScreen()),
       );
     });
   }
@@ -62,48 +62,61 @@ class _SplashScreenState extends State<SplashScreen>
     final size = MediaQuery.of(context).size;
 
     return Scaffold(
-      backgroundColor: const Color(0xFF121212), // Dark background
-      body: Stack(
-        children: [
-          // Circular arcs positioned to match the image
-          Positioned(
-            top: -size.width * 0.001,
-            right: -size.width * 0.2,
-            child: _buildArc(size.width * 0.4),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              const Color(0xFF0E0B2E), // Deep navy blue at top
+              const Color(0xFF1A103C), // Dark purple in middle
+              const Color(0xFF150C34), // Darkest purple at bottom
+            ],
           ),
-          Positioned(
-            bottom: -size.width * 0.3,
-            left: -size.width * 0.3,
-            child: _buildArc(size.width * 0.6),
-          ),
-          Positioned(
-            top: size.width * 0.35,
-            left: -size.width * 0.2,
-            child: _buildArc(size.width * 0.3),
-          ),
-
-          // Rotating 3D cubes
-          Positioned(
-            bottom: size.height * 0.50,
-            left: size.width * 0.15,
-            child: AnimatedBuilder(
-              animation: _controller,
-              builder: (context, child) {
-                return Transform(
-                  transform: Matrix4.identity()
-                    ..setEntry(3, 2, 0.001)
-                    ..rotateX(_controller.value * 2 * pi)
-                    ..rotateY(_controller.value * 2 * pi),
-                  alignment: Alignment.center,
-                  child: Cube(
-                      size: size.width * 0.15, color: const Color(0xFF9575CD)),
-                );
-              },
+        ),
+        child: Stack(
+          children: [
+            // Decorative elements like those in the image
+            // Glow effects
+            Positioned(
+              top: size.height * 0.1,
+              right: size.width * 0.1,
+              child: _buildGlowCircle(30, Colors.purple.shade300),
             ),
-          ),
-          Positioned(
+            Positioned(
+              bottom: size.height * 0.2,
+              left: size.width * 0.15,
+              child: _buildGlowCircle(40, Colors.purple.shade200),
+            ),
+            
+            // Small stars
+            ..._buildStars(size, 20),
+            
+            // Rotating 3D cubes
+            Positioned(
+              bottom: size.height * 0.70,
+              left: size.width * 0.15,
+              child: AnimatedBuilder(
+                animation: _controller,
+                builder: (context, child) {
+                  return Transform(
+                    transform: Matrix4.identity()
+                      ..setEntry(3, 2, 0.001)
+                      ..rotateX(_controller.value * 2 * pi)
+                      ..rotateY(_controller.value * 2 * pi),
+                    alignment: Alignment.center,
+                    child: Cube(
+                      size: size.width * 0.15, 
+                      color: const Color(0xFF9575CD),
+                    ),
+                  );
+                },
+              ),
+            ),
+
+            Positioned(
             bottom: size.height * 0.15,
-            right: size.width * 0.10,
+            right: size.width * 0.15,
             child: AnimatedBuilder(
               animation: _controller,
               builder: (context, child) {
@@ -114,10 +127,87 @@ class _SplashScreenState extends State<SplashScreen>
                     ..rotateY(_controller.value * 2 * pi * -0.7),
                   alignment: Alignment.center,
                   child: Cube(
-                      size: size.width * 0.25, color: const Color(0xFF9575CD)),
+                      size: size.width * 0.15, color: const Color(0xFF9575CD)),
                 );
               },
+           ),
+),
+            // Centered Logo
+            Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Image.asset(
+                    'assets/images/logo.png',
+                    width: size.width * 0.5,
+                    height: size.width * 0.5,
+                  ),
+                  const SizedBox(height: 20),
+                  const Text(
+                    '',
+                    style: TextStyle(
+                      fontSize: 32,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                      letterSpacing: 1.2,
+                    ),
+                  ),
+                ],
+              ),
             ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  List<Widget> _buildStars(Size size, int count) {
+    final random = Random();
+    final stars = <Widget>[];
+    
+    for (var i = 0; i < count; i++) {
+      stars.add(
+        Positioned(
+          left: random.nextDouble() * size.width,
+          top: random.nextDouble() * size.height,
+          child: _buildStar(random.nextInt(4) + 2),
+        ),
+      );
+    }
+    
+    return stars;
+  }
+
+  Widget _buildStar(double size) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(size / 2),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.purple.shade200.withOpacity(0.8),
+            blurRadius: size * 2,
+            spreadRadius: size / 2,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildGlowCircle(double size, Color color) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: Colors.transparent,
+        boxShadow: [
+          BoxShadow(
+            color: color.withOpacity(0.6),
+            blurRadius: size,
+            spreadRadius: size / 2,
           ),
         ],
       ),
@@ -251,80 +341,225 @@ class Cube extends StatelessWidget {
   }
 }
 
-// Placeholder for the next screen
-// Placeholder for the next screen with navigation to login and signup
-// You can place this in your main.dart file or create a separate next_screen.dart file
 
-class NextScreen extends StatelessWidget {
-  const NextScreen({Key? key}) : super(key: key);
+// New Welcome Screen similar to the image you shared
+class WelcomeScreen extends StatelessWidget {
+  const WelcomeScreen({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
+    final size = MediaQuery.of(context).size;
+    
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Finance App'),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              const Color(0xFF0E0B2E), // Deep navy blue at top
+              const Color(0xFF1A103C), // Dark purple in middle
+              const Color(0xFF150C34), // Darkest purple at bottom
+            ],
+          ),
+        ),
+        child: SafeArea(
+          child: Column(
+            children: [
+              const Spacer(flex: 1),
+              // Title text
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 30),
+                child: Text(
+                  'Start your journey to smarter spending',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+              
+              const Spacer(flex: 1),
+              
+              // Center phone image with financial elements
+              SizedBox(
+                height: size.height * 0.5,
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    // You'll need to create this image or use placeholder
+                    Image.asset(
+                      'assets/images/phone_screen.png',
+                      width: size.width * 1.0,
+                    height: size.width * 1.0,
+                    ),
+                    
+                    // Decorative elements
+                    /*
+                    Positioned(
+                      left: size.width * 0.1,
+                      top: size.height * 0.05,
+                      child: _buildDecorationItem('assets/images/piggy_bank.png', size.width * 0.15),
+                    ),
+                    Positioned(
+                      right: size.width * 0.1,
+                      top: size.height * 0.3,
+                      child: _buildDecorationItem('assets/images/chart.png', size.width * 0.15),
+                    ),
+                    Positioned(
+                      left: size.width * 0.15,
+                      bottom: size.height * 0.05,
+                      child: _buildCoinStack(size.width * 0.15),
+                    ),
+                    Positioned(
+                      right: size.width * 0.15,
+                      bottom: size.height * 0.05,
+                      child: _buildCoinStack(size.width * 0.15),
+                    ),*/
+                  ],
+                ),
+              ),
+              
+              const Spacer(flex: 1),
+              
+              // Tagline
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 40),
+                child: Text(
+                  'Finora helps you track, save, and grow — effortlessly',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 18,
+                    color: Colors.white,
+                    fontWeight: FontWeight.w300,
+                  ),
+                ),
+              ),
+              
+              const Spacer(flex: 1),
+              
+              // Login Button
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 40),
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFDBC4FF), // Light purple
+                    foregroundColor: const Color(0xFF1A103C), // Dark purple
+                    minimumSize: Size(size.width, 56),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30),
+                    ),
+                  ),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const LoginScreen()),
+                    );
+                  },
+                  child: const Text(
+                    'Login',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+              
+              const SizedBox(height: 16),
+              
+              // Sign Up Button
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 40),
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFDBC4FF), // Light purple
+                    foregroundColor: const Color(0xFF1A103C), // Dark purple
+                    minimumSize: Size(size.width, 56),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30),
+                    ),
+                  ),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const SignUpScreen()),
+                    );
+                  },
+                  child: const Text(
+                    'Sign up',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+              
+              const Spacer(flex: 1),
+            ],
+          ),
+        ),
       ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Text(
-              'Welcome to Finance App',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
+    );
+  }
+  
+  Widget _buildDecorationItem(String assetPath, double size) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        color: Colors.purple.shade100.withOpacity(0.2),
+        shape: BoxShape.circle,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.purple.shade200.withOpacity(0.5),
+            blurRadius: 20,
+            spreadRadius: 5,
+          ),
+        ],
+      ),
+      child: Center(
+        child: Image.asset(
+          assetPath,
+          width: size * 0.6,
+          height: size * 0.6,
+        ),
+      ),
+    );
+  }
+  
+  Widget _buildCoinStack(double size) {
+    return SizedBox(
+      width: size,
+      height: size,
+      child: Stack(
+        alignment: Alignment.bottomCenter,
+        children: List.generate(
+          3,
+          (index) => Positioned(
+            bottom: index * 5.0,
+            child: Container(
+              width: size - (index * 5),
+              height: 10,
+              decoration: BoxDecoration(
+                color: Colors.amber.shade300,
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.amber.shade100.withOpacity(0.8),
+                    blurRadius: 5,
+                    spreadRadius: 1,
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 40),
-
-            // Button to navigate to Login page
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.purple.shade300,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 50, vertical: 15),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(30),
-                ),
-              ),
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const LoginScreen()),
-                );
-              },
-              child: const Text(
-                'Log In',
-                style: TextStyle(fontSize: 18, color: Colors.white),
-              ),
-            ),
-
-            const SizedBox(height: 20),
-
-            // Button to navigate to Sign Up page
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.purple.shade300,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 50, vertical: 15),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(30),
-                ),
-              ),
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const SignUpScreen()),
-                );
-              },
-              child: const Text(
-                'Sign Up',
-                style: TextStyle(fontSize: 18, color: Colors.white),
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );
   }
 }
+

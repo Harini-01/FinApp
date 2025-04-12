@@ -69,4 +69,23 @@ class AuthService {
       throw Exception(json.decode(response.body)['error']);
     }
   }
+
+  static Future<Map<String, dynamic>> getProfile(
+      {required String userId}) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/getProfile'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({'userId': userId}),
+      );
+
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
+      } else {
+        throw Exception(json.decode(response.body)['error']);
+      }
+    } catch (e) {
+      throw Exception('Failed to load profile: $e');
+    }
+  }
 }

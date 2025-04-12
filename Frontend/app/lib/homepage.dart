@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
 import 'profile.dart';
 import 'chatbot.dart';
+import 'dart:convert';
+import 'goals_page.dart';
+import 'package:http/http.dart' as http;
+import 'expenses.dart';
+import 'insights.dart';
 
 class HomePage extends StatefulWidget {
   final String userId;
@@ -215,8 +220,10 @@ class _HomePageState extends State<HomePage> {
                                       onTap: () => Navigator.push(
                                         context,
                                         MaterialPageRoute(
-                                            builder: (context) =>
-                                                const ExpensesPage()),
+                                          builder: (context) => ExpensePage(
+                                              userId: widget
+                                                  .userId), // Changed from ExpensesPage to ExpensePage
+                                        ),
                                       ),
                                     ),
                                   ),
@@ -235,8 +242,9 @@ class _HomePageState extends State<HomePage> {
                                       onTap: () => Navigator.push(
                                         context,
                                         MaterialPageRoute(
-                                            builder: (context) =>
-                                                const GoalsPage()),
+                                            builder: (context) => GoalsPage(
+                                                  userId: widget.userId,
+                                                )),
                                       ),
                                     ),
                                   ),
@@ -258,12 +266,41 @@ class _HomePageState extends State<HomePage> {
                                       color: const Color(0xFFE0F2F1),
                                       icon: Icons.extension,
                                       iconColor: Colors.green,
-                                      onTap: () => Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                            builder: (context) =>
-                                                const ChatbotPage()),
-                                      ),
+                                      onTap: () async {
+                                        try {
+                                          final response = await http.post(
+                                            Uri.parse(
+                                                'http://127.0.0.1:5001/finapp-d7e39/us-central1/getUserData'),
+                                            headers: {
+                                              'Content-Type': 'application/json'
+                                            },
+                                            body: json.encode(
+                                                {'userId': widget.userId}),
+                                          );
+
+                                          if (response.statusCode == 200) {
+                                            final userData =
+                                                json.decode(response.body);
+                                            Navigator.push(
+                                              context,
+                                              MaterialPageRoute(
+                                                builder: (context) =>
+                                                    ChatbotPage(
+                                                  userId: widget.userId,
+                                                  userData: userData,
+                                                ),
+                                              ),
+                                            );
+                                          }
+                                        } catch (e) {
+                                          ScaffoldMessenger.of(context)
+                                              .showSnackBar(
+                                            SnackBar(
+                                                content: Text(
+                                                    'Error loading user data: $e')),
+                                          );
+                                        }
+                                      },
                                     ),
                                   ),
 
@@ -281,8 +318,9 @@ class _HomePageState extends State<HomePage> {
                                       onTap: () => Navigator.push(
                                         context,
                                         MaterialPageRoute(
-                                            builder: (context) =>
-                                                const InsightsPage()),
+                                          builder: (context) =>
+                                              const InsightsPage(),
+                                        ),
                                       ),
                                     ),
                                   ),
@@ -383,8 +421,8 @@ class _HomePageState extends State<HomePage> {
       ),
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
-        selectedItemColor: Colors.green,
-        unselectedItemColor: const Color.fromARGB(255, 188, 188, 188),
+        selectedItemColor: Colors.purple[700],
+        unselectedItemColor: Colors.grey,
         items: [
           BottomNavigationBarItem(
             icon: IconButton(
@@ -404,13 +442,37 @@ class _HomePageState extends State<HomePage> {
             icon: Icon(Icons.swap_horiz),
             label: 'Transfer',
           ),
-          const BottomNavigationBarItem(
-            icon: Icon(Icons.block),
-            label: 'Block',
+          BottomNavigationBarItem(
+            icon: IconButton(
+              icon: const Icon(Icons.pie_chart),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const InsightsPage(),
+                  ),
+                );
+              },
+            ),
+            label: 'Insights',
           ),
           const BottomNavigationBarItem(
             icon: Icon(Icons.settings),
             label: 'Settings',
+          ),
+          BottomNavigationBarItem(
+            icon: IconButton(
+              icon: const Icon(Icons.track_changes),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => GoalsPage(userId: widget.userId),
+                  ),
+                );
+              },
+            ),
+            label: 'Goals',
           ),
         ],
       ),
@@ -585,53 +647,7 @@ class DashboardPage extends StatelessWidget {
   }
 }
 
-class ExpensesPage extends StatelessWidget {
-  const ExpensesPage({Key? key}) : super(key: key);
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Expenses')),
-      body: const Center(child: Text('Expenses Page')),
-    );
-  }
-}
-
-class GoalsPage extends StatelessWidget {
-  const GoalsPage({Key? key}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Goals')),
-      body: const Center(child: Text('Goals Page')),
-    );
-  }
-}
-
-class ChatbotPage extends StatelessWidget {
-  const ChatbotPage({Key? key}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Chatbot')),
-      body: const Center(child: Text('Chatbot Page')),
-    );
-  }
-}
-
-class InsightsPage extends StatelessWidget {
-  const InsightsPage({Key? key}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Insights')),
-      body: const Center(child: Text('Insights Page')),
-    );
-  }
-}
 
 class SettingsPage extends StatelessWidget {
   const SettingsPage({Key? key}) : super(key: key);
