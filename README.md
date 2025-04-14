@@ -1,4 +1,5 @@
 ✨ Features of Finora
+<br><br>
 🔐 User Authentication
 
 Sign up/login with Google or email via Firebase Auth
